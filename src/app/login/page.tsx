@@ -3,7 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import authService from "../services/auth/auth.service";
+import { useAuthStore } from "../store/auth";
 import AuthLayout from "../components/auth/AuthLayout";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
@@ -16,20 +16,23 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
+    // Usar Zustand store
+    const { login } = useAuthStore();
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError("");
         setLoading(true);
 
         try {
-            const response = await authService.login({ email, password });
-            console.log("Login exitoso:", response);
+            await login(email, password);
+            console.log("Login exitoso");
 
             // Redirigir al dashboard después del login exitoso
             router.push("/dashboard");
         } catch (err: any) {
             console.error("Error al hacer login:", err);
-            setError(err.response?.data?.message || "Error al iniciar sesión. Verifica tus credenciales.");
+            setError(err.response?.data?.message || "Error al iniciar sesión");
         } finally {
             setLoading(false);
         }

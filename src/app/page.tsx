@@ -229,21 +229,6 @@ export default function Home() {
               © 2025 POV Review. Todos los derechos reservados.
             </div>
 
-            <div className="flex gap-6">
-              <Link href="/movies" className="text-pov-gray hover:text-pov-gold transition">
-                Películas
-              </Link>
-              {!isAuthenticated && (
-                <>
-                  <Link href="/login" className="text-pov-gray hover:text-pov-gold transition">
-                    Iniciar Sesión
-                  </Link>
-                  <Link href="/register" className="text-pov-gray hover:text-pov-gold transition">
-                    Registrarse
-                  </Link>
-                </>
-              )}
-            </div>
           </div>
         </div>
       </footer>

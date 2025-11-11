@@ -3,7 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import authService from "../services/auth/auth.service";
+import { useAuthStore } from "../store/auth";
 import AuthLayout from "../components/auth/AuthLayout";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
@@ -20,6 +20,9 @@ export default function RegisterPage() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [serverError, setServerError] = useState("");
     const [loading, setLoading] = useState(false);
+
+    // Usar Zustand store
+    const { register } = useAuthStore();
 
     const handleChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -69,24 +72,15 @@ export default function RegisterPage() {
         }
 
         setLoading(true);
-
         try {
-            const response = await authService.register({
-                name: formData.name,
-                email: formData.email,
-                password: formData.password
-            });
-
-            console.log("Registro exitoso:", response);
+            await register(formData.name, formData.email, formData.password);
+            console.log("Registro exitoso");
 
             // Redirigir al dashboard después del registro exitoso
             router.push("/dashboard");
         } catch (err: any) {
             console.error("Error al registrarse:", err);
-            setServerError(
-                err.response?.data?.message ||
-                "Error al crear la cuenta. Intenta con otro correo electrónico."
-            );
+            setServerError(err.response?.data?.message || "Error al registrarse");
         } finally {
             setLoading(false);
         }
