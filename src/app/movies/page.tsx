@@ -4,16 +4,18 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import movieService from "../services/movie/movie.service";
-import authService from "../services/auth/auth.service";
 import { Movies } from "../interfaces/movies-response.interface";
 import MovieCard from "../components/movies/MovieCard";
+import Navbar from "../components/layout/Navbar";
+import RoleGuard from "../components/auth/RoleGuard";
+import { useAuth } from "../hooks/useAuth";
 
 export default function MoviesPage() {
     const router = useRouter();
     const [movies, setMovies] = useState<Movies[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [isAdmin, setIsAdmin] = useState(false);
+    const { isAdmin, canDeleteMovie } = useAuth();
 
     useEffect(() => {
         const fetchMovies = async () => {
@@ -21,10 +23,6 @@ export default function MoviesPage() {
                 setLoading(true);
                 const data = await movieService.getAll();
                 setMovies(data);
-
-                // Verificar si el usuario está autenticado y es admin
-                // (esto es simplificado, idealmente vendría del token decodificado)
-                setIsAdmin(authService.isAuthenticated());
             } catch (error: any) {
                 console.error("Error al cargar películas:", error);
                 setError("Error al cargar las películas");
@@ -37,6 +35,12 @@ export default function MoviesPage() {
     }, []);
 
     const handleDelete = async (id: string) => {
+        // Verificar permisos
+        if (!canDeleteMovie()) {
+            alert("No tienes permisos para eliminar películas");
+            return;
+        }
+
         if (!confirm("¿Estás seguro de que deseas eliminar esta película?")) {
             return;
         }
@@ -48,11 +52,6 @@ export default function MoviesPage() {
             console.error("Error al eliminar película:", error);
             alert("Error al eliminar la película. " + (error.response?.data?.message || ""));
         }
-    };
-
-    const handleLogout = () => {
-        authService.logout();
-        router.push("/login");
     };
 
     if (loading) {
@@ -68,50 +67,8 @@ export default function MoviesPage() {
 
     return (
         <div className="min-h-screen bg-pov-primary">
-            {/* Header/Navbar */}
-            <nav className="bg-pov-dark border-b border-pov-gold/20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
-                        <div className="flex items-center gap-3">
-                            <span className="text-3xl">🎬</span>
-                            <h1 className="text-2xl font-bold text-pov-cream">POV Review</h1>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <Link
-                                href="/movies"
-                                className="text-pov-gold hover:text-pov-gold-dark font-semibold transition"
-                            >
-                                Películas
-                            </Link>
-
-                            {authService.isAuthenticated() ? (
-                                <>
-                                    <Link
-                                        href="/dashboard"
-                                        className="text-pov-cream hover:text-pov-gold transition"
-                                    >
-                                        Dashboard
-                                    </Link>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="bg-red-600 hover:bg-red-700 text-pov-cream font-semibold py-2 px-4 rounded-lg transition duration-200"
-                                    >
-                                        Cerrar Sesión
-                                    </button>
-                                </>
-                            ) : (
-                                <Link
-                                    href="/login"
-                                    className="bg-pov-gold hover:bg-pov-gold-dark text-pov-dark font-semibold py-2 px-4 rounded-lg transition duration-200"
-                                >
-                                    Iniciar Sesión
-                                </Link>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </nav>
+            {/* Navbar component */}
+            <Navbar />
 
             {/* Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -122,14 +79,14 @@ export default function MoviesPage() {
                         <p className="text-pov-gray">Explora nuestra colección de películas</p>
                     </div>
 
-                    {isAdmin && (
+                    <RoleGuard allowedRoles={['admin']}>
                         <Link
                             href="/movies/create"
                             className="bg-pov-gold hover:bg-pov-gold-dark text-pov-dark font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-lg"
                         >
                             ➕ Agregar Película
                         </Link>
-                    )}
+                    </RoleGuard>
                 </div>
 
                 {/* Mensajes de error */}
@@ -146,7 +103,7 @@ export default function MoviesPage() {
                             <MovieCard
                                 key={movie.id}
                                 movie={movie}
-                                showActions={isAdmin}
+                                showActions={isAdmin()}
                                 onDelete={handleDelete}
                             />
                         ))}
@@ -155,14 +112,14 @@ export default function MoviesPage() {
                     <div className="text-center py-12">
                         <div className="text-6xl mb-4">🎬</div>
                         <p className="text-pov-gray text-lg">No hay películas disponibles</p>
-                        {isAdmin && (
+                        <RoleGuard allowedRoles={['admin']}>
                             <Link
                                 href="/movies/create"
                                 className="inline-block mt-4 bg-pov-gold hover:bg-pov-gold-dark text-pov-dark font-semibold py-2 px-4 rounded-lg transition duration-200"
                             >
                                 Agregar la primera película
                             </Link>
-                        )}
+                        </RoleGuard>
                     </div>
                 )}
             </div>

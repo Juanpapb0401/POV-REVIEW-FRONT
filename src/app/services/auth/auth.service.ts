@@ -54,6 +54,16 @@ const authService = {
 
     getToken: () => {
         return localStorage.getItem('authToken');
+    },
+
+    getProfile: async () => {
+        const response = await apiService.get<{
+            id: string;
+            name: string;
+            email: string;
+            roles: string[];
+        }>('users/profile');
+        return response;
     }
 };
 

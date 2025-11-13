@@ -28,8 +28,8 @@ export default function LoginPage() {
             await login(email, password);
             console.log("Login exitoso");
 
-            // Redirigir al dashboard después del login exitoso
-            router.push("/dashboard");
+            // Redirigir a películas después del login exitoso
+            router.push("/movies");
         } catch (err: any) {
             console.error("Error al hacer login:", err);
             setError(err.response?.data?.message || "Error al iniciar sesión");

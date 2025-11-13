@@ -13,15 +13,16 @@ export const useAuthStore = create<AuthStore>()(
 
             login: async (email: string, password: string) => {
                 const response = await authService.login({ email, password });
-                set((state) => ({
-                    ...state,
-                    user: response.user,
+
+                // El backend no retorna el user en el login, así que lo obtenemos del perfil
+                const userProfile = await authService.getProfile();
+
+                set({
+                    user: userProfile,
                     token: response.token,
                     isAuthenticated: true
-                }));
-            },
-
-            register: async (name: string, email: string, password: string) => {
+                });
+            }, register: async (name: string, email: string, password: string) => {
                 const response = await authService.register({ name, email, password });
                 set((state) => ({
                     ...state,
@@ -59,11 +60,6 @@ export const useAuthStore = create<AuthStore>()(
         }),
         {
             name: 'auth-storage',
-            partialize: (state) => ({
-                user: state.user,
-                token: state.token,
-                isAuthenticated: state.isAuthenticated
-            })
         }
     )
 );

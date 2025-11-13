@@ -4,26 +4,37 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import movieService from "../../services/movie/movie.service";
-import authService from "../../services/auth/auth.service";
+import reviewService, { Review } from "../../services/review/review.service";
 import { Movies } from "../../interfaces/movies-response.interface";
+import Navbar from "../../components/layout/Navbar";
+import ReviewCard from "../../components/reviews/ReviewCard";
+import ReviewForm from "../../components/reviews/ReviewForm";
+import RoleGuard from "../../components/auth/RoleGuard";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function MovieDetailPage() {
     const router = useRouter();
     const params = useParams();
     const movieId = params.id as string;
+    const { isAdmin, isAuthenticated, canDeleteMovie, user } = useAuth();
 
     const [movie, setMovie] = useState<Movies | null>(null);
+    const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+    const [showReviewForm, setShowReviewForm] = useState(false);
+    const [editingReview, setEditingReview] = useState<Review | null>(null);
 
     useEffect(() => {
-        const fetchMovie = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                const data = await movieService.getById(movieId);
-                setMovie(data);
-                setIsAdmin(authService.isAuthenticated());
+                const movieData = await movieService.getById(movieId);
+                setMovie(movieData);
+
+                // Cargar reseñas
+                await fetchReviews();
             } catch (error: any) {
                 console.error("Error al cargar película:", error);
                 setError("Error al cargar la película");
@@ -33,11 +44,28 @@ export default function MovieDetailPage() {
         };
 
         if (movieId) {
-            fetchMovie();
+            fetchData();
         }
     }, [movieId]);
 
+    const fetchReviews = async () => {
+        try {
+            setReviewsLoading(true);
+            const reviewsData = await reviewService.getMovieReviews(movieId);
+            setReviews(reviewsData);
+        } catch (error: any) {
+            console.error("Error al cargar reseñas:", error);
+        } finally {
+            setReviewsLoading(false);
+        }
+    };
+
     const handleDelete = async () => {
+        if (!canDeleteMovie()) {
+            alert("No tienes permisos para eliminar películas");
+            return;
+        }
+
         if (!confirm("¿Estás seguro de que deseas eliminar esta película?")) {
             return;
         }
@@ -50,6 +78,38 @@ export default function MovieDetailPage() {
             alert("Error al eliminar la película");
         }
     };
+
+    const handleCreateReview = async (rating: number, comment: string) => {
+        try {
+            await reviewService.create({ rating, comment, movieId });
+            await fetchReviews();
+            setShowReviewForm(false);
+        } catch (error: any) {
+            console.error("Error al crear reseña:", error);
+            throw error;
+        }
+    };
+
+    const handleDeleteReview = async (reviewId: string) => {
+        try {
+            await reviewService.delete(reviewId);
+            await fetchReviews();
+        } catch (error: any) {
+            console.error("Error al eliminar reseña:", error);
+            alert("Error al eliminar la reseña");
+        }
+    };
+
+    const handleEditReview = (reviewId: string) => {
+        const review = reviews.find(r => r.id === reviewId);
+        if (review) {
+            setEditingReview(review);
+            setShowReviewForm(true);
+        }
+    };
+
+    // Verificar si el usuario ya ha escrito una reseña
+    const userReview = reviews.find(r => r.user.id === user?.id);
 
     const formatDate = (date: Date) => {
         return new Date(date).toLocaleDateString('es-ES', {
@@ -91,24 +151,8 @@ export default function MovieDetailPage() {
 
     return (
         <div className="min-h-screen bg-pov-primary">
-            {/* Navbar simple */}
-            <nav className="bg-pov-dark border-b border-pov-gold/20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
-                        <Link href="/movies" className="flex items-center gap-3 hover:opacity-80 transition">
-                            <span className="text-3xl">🎬</span>
-                            <span className="text-xl font-bold text-pov-cream">POV Review</span>
-                        </Link>
-
-                        <Link
-                            href="/movies"
-                            className="text-pov-gold hover:text-pov-gold-dark font-semibold transition"
-                        >
-                            ← Volver a Películas
-                        </Link>
-                    </div>
-                </div>
-            </nav>
+            {/* Navbar */}
+            <Navbar />
 
             {/* Content */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -166,7 +210,7 @@ export default function MovieDetailPage() {
                         </div>
 
                         {/* Acciones (solo para admins) */}
-                        {isAdmin && (
+                        <RoleGuard allowedRoles={['admin']}>
                             <div className="flex gap-4 mt-8 pt-8 border-t border-pov-gold/10">
                                 <Link
                                     href={`/movies/edit/${movie.id}`}
@@ -181,16 +225,97 @@ export default function MovieDetailPage() {
                                     🗑️ Eliminar
                                 </button>
                             </div>
-                        )}
+                        </RoleGuard>
                     </div>
                 </div>
 
-                {/* Sección de Reviews (placeholder por ahora) */}
-                <div className="mt-8 bg-pov-secondary rounded-lg shadow-xl p-8 border border-pov-gold/10">
-                    <h2 className="text-2xl font-bold text-pov-cream mb-4">Reseñas</h2>
-                    <p className="text-pov-gray text-center py-8">
-                        Las reseñas estarán disponibles próximamente
-                    </p>
+                {/* Sección de Reviews */}
+                <div className="mt-8 space-y-6">
+                    {/* Header de reseñas */}
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-3xl font-bold text-pov-cream">
+                            Reseñas ({reviews.length})
+                        </h2>
+
+                        {isAuthenticated && !userReview && !showReviewForm && (
+                            <button
+                                onClick={() => setShowReviewForm(true)}
+                                className="bg-pov-gold hover:bg-pov-gold-dark text-pov-dark font-semibold py-2 px-6 rounded-lg transition duration-200"
+                            >
+                                ✍️ Escribir Reseña
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Formulario de reseña */}
+                    {showReviewForm && !userReview && (
+                        <ReviewForm
+                            movieId={movieId}
+                            onSubmit={handleCreateReview}
+                            onCancel={() => {
+                                setShowReviewForm(false);
+                                setEditingReview(null);
+                            }}
+                            initialRating={editingReview?.rating}
+                            initialComment={editingReview?.comment}
+                            isEditing={!!editingReview}
+                        />
+                    )}
+
+                    {/* Si ya tiene una reseña, mostrarla destacada */}
+                    {userReview && !showReviewForm && (
+                        <div>
+                            <h3 className="text-lg font-semibold text-pov-gold mb-3">Tu Reseña</h3>
+                            <ReviewCard
+                                review={userReview}
+                                onEdit={handleEditReview}
+                                onDelete={handleDeleteReview}
+                            />
+                        </div>
+                    )}
+
+                    {/* Lista de reseñas */}
+                    {reviewsLoading ? (
+                        <div className="text-center py-12">
+                            <div className="text-pov-gold text-4xl mb-4 animate-pulse">⭐</div>
+                            <div className="text-pov-gray">Cargando reseñas...</div>
+                        </div>
+                    ) : reviews.length > 0 ? (
+                        <div>
+                            <h3 className="text-lg font-semibold text-pov-cream mb-3">
+                                {userReview ? 'Otras Reseñas' : 'Todas las Reseñas'}
+                            </h3>
+                            <div className="space-y-4">
+                                {reviews
+                                    .filter(r => r.id !== userReview?.id)
+                                    .map(review => (
+                                        <ReviewCard
+                                            key={review.id}
+                                            review={review}
+                                            onEdit={handleEditReview}
+                                            onDelete={handleDeleteReview}
+                                        />
+                                    ))}
+                            </div>
+                        </div>
+                    ) : (
+                        !showReviewForm && (
+                            <div className="bg-pov-secondary/50 rounded-lg p-12 text-center border border-pov-gold/10">
+                                <div className="text-6xl mb-4">⭐</div>
+                                <p className="text-pov-gray text-lg mb-4">
+                                    Aún no hay reseñas para esta película
+                                </p>
+                                {isAuthenticated && (
+                                    <button
+                                        onClick={() => setShowReviewForm(true)}
+                                        className="bg-pov-gold hover:bg-pov-gold-dark text-pov-dark font-semibold py-3 px-6 rounded-lg transition duration-200"
+                                    >
+                                        ¡Sé el primero en reseñar!
+                                    </button>
+                                )}
+                            </div>
+                        )
+                    )}
                 </div>
             </div>
         </div>
