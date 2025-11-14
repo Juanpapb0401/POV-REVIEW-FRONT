@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react';
 import { Review } from '../../services/review/review.service';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -12,7 +11,6 @@ interface ReviewCardProps {
 
 export default function ReviewCard({ review, onEdit, onDelete }: ReviewCardProps) {
     const { user, canEditReview, canDeleteReview } = useAuth();
-    const [isDeleting, setIsDeleting] = useState(false);
 
     const formatDate = (date: Date) => {
         return new Date(date).toLocaleDateString('es-ES', {
@@ -32,18 +30,9 @@ export default function ReviewCard({ review, onEdit, onDelete }: ReviewCardProps
         ));
     };
 
-    const handleDelete = async () => {
-        if (!confirm('¿Estás seguro de que deseas eliminar esta reseña?')) {
-            return;
-        }
-
-        setIsDeleting(true);
-        try {
-            if (onDelete) {
-                await onDelete(review.id);
-            }
-        } finally {
-            setIsDeleting(false);
+    const handleDelete = () => {
+        if (onDelete) {
+            onDelete(review.id);
         }
     };
 
@@ -81,10 +70,9 @@ export default function ReviewCard({ review, onEdit, onDelete }: ReviewCardProps
                     {canDeleteReview(review.user.id) && onDelete && (
                         <button
                             onClick={handleDelete}
-                            disabled={isDeleting}
-                            className="text-red-500 hover:text-red-600 text-sm font-medium transition disabled:opacity-50"
+                            className="text-red-500 hover:text-red-600 text-sm font-medium transition"
                         >
-                            🗑️ {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                            🗑️ Eliminar
                         </button>
                     )}
                 </div>

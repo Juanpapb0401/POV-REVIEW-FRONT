@@ -7,6 +7,8 @@ import { Users } from "../../interfaces/users-response.interface";
 import Navbar from "../../components/layout/Navbar";
 import ProtectedRoute from "../../components/auth/ProtectedRoute";
 import { useAuth } from "../../hooks/useAuth";
+import Modal from "../../components/ui/Modal";
+import Pagination from "../../components/ui/Pagination";
 
 export default function MainPage() {
     const router = useRouter();
@@ -16,7 +18,31 @@ export default function MainPage() {
     const [successMessage, setSuccessMessage] = useState("");
     const { isAdmin, user: currentUser } = useAuth();
 
+    // Modal state
+    const [modal, setModal] = useState<{
+        isOpen: boolean;
+        type: 'info' | 'warning' | 'error' | 'success' | 'confirm';
+        title: string;
+        message: string;
+        onConfirm?: () => void;
+    }>({
+        isOpen: false,
+        type: 'info',
+        title: '',
+        message: ''
+    });
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
+    const totalPages = Math.ceil(users.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentUsers = users.slice(indexOfFirstItem, indexOfLastItem);
+
     useEffect(() => {
+        // Cargar usuarios cuando el componente se monte
+        // El ProtectedRoute ya se encarga de validar que sea admin
         fetchUsers();
     }, []);
 
@@ -42,32 +68,52 @@ export default function MainPage() {
     const handleDeleteUser = async (userId: string, userName: string) => {
         // No permitir que el admin se elimine a sí mismo
         if (currentUser?.id === userId) {
-            setError("No puedes eliminar tu propia cuenta");
-            setTimeout(() => setError(""), 3000);
+            setModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Acción No Permitida',
+                message: 'No puedes eliminar tu propia cuenta'
+            });
             return;
         }
 
-        if (!confirm(`¿Estás seguro de que deseas eliminar al usuario "${userName}"?`)) {
-            return;
-        }
-
-        try {
-            await userService.delete(userId);
-            setUsers(users.filter(u => u.id !== userId));
-            setSuccessMessage(`Usuario "${userName}" eliminado exitosamente`);
-            setTimeout(() => setSuccessMessage(""), 3000);
-        } catch (error: any) {
-            console.error("Error al eliminar usuario:", error);
-            setError(error.response?.data?.message || "Error al eliminar el usuario");
-            setTimeout(() => setError(""), 3000);
-        }
+        setModal({
+            isOpen: true,
+            type: 'confirm',
+            title: 'Confirmar Eliminación',
+            message: `¿Estás seguro de que deseas eliminar al usuario "${userName}"? Esta acción no se puede deshacer.`,
+            onConfirm: async () => {
+                try {
+                    await userService.delete(userId);
+                    setUsers(users.filter(u => u.id !== userId));
+                    setModal({
+                        isOpen: true,
+                        type: 'success',
+                        title: '¡Éxito!',
+                        message: `Usuario "${userName}" eliminado exitosamente`
+                    });
+                } catch (error: any) {
+                    console.error("Error al eliminar usuario:", error);
+                    setModal({
+                        isOpen: true,
+                        type: 'error',
+                        title: 'Error',
+                        message: error.response?.data?.message || "Error al eliminar el usuario"
+                    });
+                }
+            }
+        });
     };
 
     const handleToggleRole = async (userId: string, currentRoles: string[]) => {
         // No permitir que el admin cambie su propio rol
         if (currentUser?.id === userId) {
-            setError("No puedes cambiar tu propio rol");
-            setTimeout(() => setError(""), 3000);
+            setModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Acción No Permitida',
+                message: 'No puedes cambiar tu propio rol'
+            });
             return;
         }
 
@@ -82,12 +128,20 @@ export default function MainPage() {
                 u.id === userId ? { ...u, roles: newRoles } : u
             ));
 
-            setSuccessMessage(`Rol actualizado exitosamente`);
-            setTimeout(() => setSuccessMessage(""), 3000);
+            setModal({
+                isOpen: true,
+                type: 'success',
+                title: '¡Éxito!',
+                message: 'Rol actualizado exitosamente'
+            });
         } catch (error: any) {
             console.error("Error al actualizar rol:", error);
-            setError(error.response?.data?.message || "Error al actualizar el rol");
-            setTimeout(() => setError(""), 3000);
+            setModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Error',
+                message: error.response?.data?.message || "Error al actualizar el rol"
+            });
         }
     };
 
@@ -216,8 +270,8 @@ export default function MainPage() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-pov-dark">
-                                            {users && users.length > 0 ? (
-                                                users.map(user => {
+                                            {currentUsers && currentUsers.length > 0 ? (
+                                                currentUsers.map(user => {
                                                     const isCurrentUser = currentUser?.id === user.id;
                                                     const isUserAdmin = user.roles.includes('admin');
 
@@ -232,16 +286,16 @@ export default function MainPage() {
                                                             <td className="px-6 py-4 text-pov-gray">{user.email}</td>
                                                             <td className="px-6 py-4">
                                                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${isUserAdmin
-                                                                        ? 'bg-pov-gold/20 text-pov-gold border-pov-gold/30'
-                                                                        : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                                                    ? 'bg-pov-gold/20 text-pov-gold border-pov-gold/30'
+                                                                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                                                                     }`}>
                                                                     {isUserAdmin ? 'ADMIN' : 'USER'}
                                                                 </span>
                                                             </td>
                                                             <td className="px-6 py-4">
                                                                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.isActive
-                                                                        ? 'bg-green-500/20 text-green-400'
-                                                                        : 'bg-red-500/20 text-red-400'
+                                                                    ? 'bg-green-500/20 text-green-400'
+                                                                    : 'bg-red-500/20 text-red-400'
                                                                     }`}>
                                                                     {user.isActive ? '✓ Activo' : '✗ Inactivo'}
                                                                 </span>
@@ -288,10 +342,34 @@ export default function MainPage() {
                                     </table>
                                 </div>
                             </div>
+
+                            {/* Paginación */}
+                            {totalPages > 1 && (
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={(page) => {
+                                        setCurrentPage(page);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                />
+                            )}
                         </>
                     )}
                 </div>
             </div>
+
+            {/* Modal */}
+            <Modal
+                isOpen={modal.isOpen}
+                onClose={() => setModal({ ...modal, isOpen: false })}
+                onConfirm={modal.onConfirm}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.type === 'confirm' ? 'Sí, confirmar' : 'Aceptar'}
+                cancelText="Cancelar"
+            />
         </ProtectedRoute>
     );
 }

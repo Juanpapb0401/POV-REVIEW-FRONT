@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import authService from "./services/auth/auth.service";
 import { useRouter } from "next/navigation";
+import { useAuth } from "./hooks/useAuth";
 
 export default function Home() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     setIsAuthenticated(authService.isAuthenticated());
@@ -36,12 +38,14 @@ export default function Home() {
 
                 {isAuthenticated ? (
                   <>
-                    <Link
-                      href="/dashboard"
-                      className="text-pov-cream hover:text-pov-gold transition font-medium"
-                    >
-                      Panel
-                    </Link>
+                    {isAdmin() && (
+                      <Link
+                        href="/dashboard"
+                        className="text-pov-cream hover:text-pov-gold transition font-medium"
+                      >
+                        Panel Admin
+                      </Link>
+                    )}
                     <button
                       onClick={() => {
                         authService.logout();

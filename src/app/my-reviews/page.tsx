@@ -6,6 +6,7 @@ import Navbar from "../components/layout/Navbar";
 import { useAuthStore } from "../store/auth/store/auth.store";
 import userService from "../services/user/user.service";
 import reviewService from "../services/review/review.service";
+import Modal from "../components/ui/Modal";
 
 interface Review {
     id: string;
@@ -26,6 +27,20 @@ export default function MyReviewsPage() {
     const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
+    // Modal state
+    const [modal, setModal] = useState<{
+        isOpen: boolean;
+        type: 'info' | 'warning' | 'error' | 'success' | 'confirm';
+        title: string;
+        message: string;
+        onConfirm?: () => void;
+    }>({
+        isOpen: false,
+        type: 'info',
+        title: '',
+        message: ''
+    });
 
     useEffect(() => {
         if (!isAuthenticated || !user) {
@@ -52,18 +67,36 @@ export default function MyReviewsPage() {
     };
 
     const handleDeleteReview = async (reviewId: string) => {
-        if (!confirm("¿Estás seguro de que deseas eliminar esta review?")) {
-            return;
-        }
-
-        try {
-            await reviewService.delete(reviewId);
-            // Actualizar la lista eliminando la review
-            setReviews(reviews.filter(review => review.id !== reviewId));
-        } catch (error) {
-            console.error("Error al eliminar review:", error);
-            alert("Error al eliminar la review");
-        }
+        setModal({
+            isOpen: true,
+            type: 'confirm',
+            title: 'Confirmar Eliminación',
+            message: '¿Estás seguro de que deseas eliminar esta review? Esta acción no se puede deshacer.',
+            onConfirm: async () => {
+                try {
+                    await reviewService.delete(reviewId);
+                    setReviews(reviews.filter(review => review.id !== reviewId));
+                    setModal({
+                        isOpen: true,
+                        type: 'success',
+                        title: '¡Éxito!',
+                        message: 'La review ha sido eliminada correctamente'
+                    });
+                } catch (error: any) {
+                    console.error("Error al eliminar review:", error);
+                    console.error("Detalles del error:", error.response?.data);
+                    const errorMessage = error.response?.data?.message ||
+                        error.response?.data?.error ||
+                        'Error al eliminar la review. Por favor intenta nuevamente.';
+                    setModal({
+                        isOpen: true,
+                        type: 'error',
+                        title: 'Error',
+                        message: errorMessage
+                    });
+                }
+            }
+        });
     };
 
     const handleEditReview = (movieId: string) => {
@@ -135,7 +168,7 @@ export default function MyReviewsPage() {
                                 <div className="flex gap-4">
                                     {/* Movie poster */}
                                     {review.movie.posterUrl && (
-                                        <div className="flex-shrink-0">
+                                        <div className="shrink-0">
                                             <img
                                                 src={review.movie.posterUrl}
                                                 alt={review.movie.title}
@@ -158,8 +191,8 @@ export default function MyReviewsPage() {
                                                     <span
                                                         key={star}
                                                         className={`text-2xl ${star <= review.rating
-                                                                ? 'text-pov-gold'
-                                                                : 'text-pov-cream/20'
+                                                            ? 'text-pov-gold'
+                                                            : 'text-pov-cream/20'
                                                             }`}
                                                     >
                                                         ★
@@ -207,6 +240,18 @@ export default function MyReviewsPage() {
                     </div>
                 )}
             </div>
+
+            {/* Modal */}
+            <Modal
+                isOpen={modal.isOpen}
+                onClose={() => setModal({ ...modal, isOpen: false })}
+                onConfirm={modal.onConfirm}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.type === 'confirm' ? 'Sí, eliminar' : 'Aceptar'}
+                cancelText="Cancelar"
+            />
         </div>
     );
 }

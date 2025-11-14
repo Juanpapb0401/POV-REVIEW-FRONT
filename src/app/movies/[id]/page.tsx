@@ -11,6 +11,7 @@ import ReviewCard from "../../components/reviews/ReviewCard";
 import ReviewForm from "../../components/reviews/ReviewForm";
 import RoleGuard from "../../components/auth/RoleGuard";
 import { useAuth } from "../../hooks/useAuth";
+import Modal from "../../components/ui/Modal";
 
 export default function MovieDetailPage() {
     const router = useRouter();
@@ -25,6 +26,20 @@ export default function MovieDetailPage() {
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [editingReview, setEditingReview] = useState<Review | null>(null);
+
+    // Modal state
+    const [modal, setModal] = useState<{
+        isOpen: boolean;
+        type: 'info' | 'warning' | 'error' | 'success' | 'confirm';
+        title: string;
+        message: string;
+        onConfirm?: () => void;
+    }>({
+        isOpen: false,
+        type: 'info',
+        title: '',
+        message: ''
+    });
 
     useEffect(() => {
         const fetchData = async () => {
@@ -66,38 +81,85 @@ export default function MovieDetailPage() {
             return;
         }
 
-        if (!confirm("¿Estás seguro de que deseas eliminar esta película?")) {
-            return;
-        }
-
-        try {
-            await movieService.delete(movieId);
-            router.push("/movies");
-        } catch (error: any) {
-            console.error("Error al eliminar película:", error);
-            alert("Error al eliminar la película");
-        }
+        const handleDeleteMovie = async () => {
+            setModal({
+                isOpen: true,
+                type: 'confirm',
+                title: 'Confirmar Eliminación',
+                message: '¿Estás seguro de que deseas eliminar esta película? Se eliminarán también todas las reviews asociadas. Esta acción no se puede deshacer.',
+                onConfirm: async () => {
+                    try {
+                        await movieService.delete(movieId);
+                        setModal({
+                            isOpen: true,
+                            type: 'success',
+                            title: '¡Éxito!',
+                            message: 'Película eliminada correctamente',
+                            onConfirm: () => router.push("/movies")
+                        });
+                    } catch (error: any) {
+                        console.error("Error al eliminar película:", error);
+                        setModal({
+                            isOpen: true,
+                            type: 'error',
+                            title: 'Error',
+                            message: 'Error al eliminar la película. Por favor intenta nuevamente.'
+                        });
+                    }
+                }
+            });
+        };
     };
 
     const handleCreateReview = async (rating: number, comment: string) => {
         try {
-            await reviewService.create({ rating, comment, movieId });
+            if (editingReview) {
+                // Estamos editando una reseña existente
+                await reviewService.update(editingReview.id, { rating, comment });
+                setEditingReview(null);
+            } else {
+                // Estamos creando una nueva reseña
+                await reviewService.create({ rating, comment, movieId });
+            }
             await fetchReviews();
             setShowReviewForm(false);
         } catch (error: any) {
-            console.error("Error al crear reseña:", error);
+            console.error("Error al guardar reseña:", error);
             throw error;
         }
     };
 
     const handleDeleteReview = async (reviewId: string) => {
-        try {
-            await reviewService.delete(reviewId);
-            await fetchReviews();
-        } catch (error: any) {
-            console.error("Error al eliminar reseña:", error);
-            alert("Error al eliminar la reseña");
-        }
+        setModal({
+            isOpen: true,
+            type: 'confirm',
+            title: 'Confirmar Eliminación',
+            message: '¿Estás seguro de que deseas eliminar esta review? Esta acción no se puede deshacer.',
+            onConfirm: async () => {
+                try {
+                    await reviewService.delete(reviewId);
+                    await fetchReviews();
+                    setModal({
+                        isOpen: true,
+                        type: 'success',
+                        title: '¡Éxito!',
+                        message: 'Review eliminada correctamente'
+                    });
+                } catch (error: any) {
+                    console.error("Error al eliminar reseña:", error);
+                    console.error("Detalles del error:", error.response?.data);
+                    const errorMessage = error.response?.data?.message ||
+                        error.response?.data?.error ||
+                        'Error al eliminar la review. Por favor intenta nuevamente.';
+                    setModal({
+                        isOpen: true,
+                        type: 'error',
+                        title: 'Error',
+                        message: errorMessage
+                    });
+                }
+            }
+        });
     };
 
     const handleEditReview = (reviewId: string) => {
@@ -247,8 +309,34 @@ export default function MovieDetailPage() {
                         )}
                     </div>
 
-                    {/* Formulario de reseña */}
-                    {showReviewForm && !userReview && (
+                    {/* Si ya tiene una reseña, mostrarla o editarla */}
+                    {userReview && (
+                        <div>
+                            <h3 className="text-lg font-semibold text-pov-gold mb-3">Tu Reseña</h3>
+                            {showReviewForm && editingReview?.id === userReview.id ? (
+                                <ReviewForm
+                                    movieId={movieId}
+                                    onSubmit={handleCreateReview}
+                                    onCancel={() => {
+                                        setShowReviewForm(false);
+                                        setEditingReview(null);
+                                    }}
+                                    initialRating={editingReview?.rating}
+                                    initialComment={editingReview?.comment}
+                                    isEditing={true}
+                                />
+                            ) : (
+                                <ReviewCard
+                                    review={userReview}
+                                    onEdit={handleEditReview}
+                                    onDelete={handleDeleteReview}
+                                />
+                            )}
+                        </div>
+                    )}
+
+                    {/* Formulario para crear nueva reseña (solo si no tiene una) */}
+                    {!userReview && showReviewForm && (
                         <ReviewForm
                             movieId={movieId}
                             onSubmit={handleCreateReview}
@@ -256,22 +344,10 @@ export default function MovieDetailPage() {
                                 setShowReviewForm(false);
                                 setEditingReview(null);
                             }}
-                            initialRating={editingReview?.rating}
-                            initialComment={editingReview?.comment}
-                            isEditing={!!editingReview}
+                            initialRating={undefined}
+                            initialComment={undefined}
+                            isEditing={false}
                         />
-                    )}
-
-                    {/* Si ya tiene una reseña, mostrarla destacada */}
-                    {userReview && !showReviewForm && (
-                        <div>
-                            <h3 className="text-lg font-semibold text-pov-gold mb-3">Tu Reseña</h3>
-                            <ReviewCard
-                                review={userReview}
-                                onEdit={handleEditReview}
-                                onDelete={handleDeleteReview}
-                            />
-                        </div>
                     )}
 
                     {/* Lista de reseñas */}
@@ -289,12 +365,32 @@ export default function MovieDetailPage() {
                                 {reviews
                                     .filter(r => r.id !== userReview?.id)
                                     .map(review => (
-                                        <ReviewCard
-                                            key={review.id}
-                                            review={review}
-                                            onEdit={handleEditReview}
-                                            onDelete={handleDeleteReview}
-                                        />
+                                        <div key={review.id}>
+                                            {showReviewForm && editingReview?.id === review.id ? (
+                                                <div>
+                                                    <p className="text-pov-gray text-sm mb-2">
+                                                        Editando reseña de: <span className="text-pov-gold font-semibold">{review.user.name}</span>
+                                                    </p>
+                                                    <ReviewForm
+                                                        movieId={movieId}
+                                                        onSubmit={handleCreateReview}
+                                                        onCancel={() => {
+                                                            setShowReviewForm(false);
+                                                            setEditingReview(null);
+                                                        }}
+                                                        initialRating={editingReview?.rating}
+                                                        initialComment={editingReview?.comment}
+                                                        isEditing={true}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <ReviewCard
+                                                    review={review}
+                                                    onEdit={handleEditReview}
+                                                    onDelete={handleDeleteReview}
+                                                />
+                                            )}
+                                        </div>
                                     ))}
                             </div>
                         </div>
@@ -318,6 +414,18 @@ export default function MovieDetailPage() {
                     )}
                 </div>
             </div>
+
+            {/* Modal */}
+            <Modal
+                isOpen={modal.isOpen}
+                onClose={() => setModal({ ...modal, isOpen: false })}
+                onConfirm={modal.onConfirm}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.type === 'confirm' ? 'Sí, eliminar' : 'Aceptar'}
+                cancelText="Cancelar"
+            />
         </div>
     );
 }

@@ -9,6 +9,8 @@ import MovieCard from "../components/movies/MovieCard";
 import Navbar from "../components/layout/Navbar";
 import RoleGuard from "../components/auth/RoleGuard";
 import { useAuth } from "../hooks/useAuth";
+import Modal from "../components/ui/Modal";
+import Pagination from "../components/ui/Pagination";
 
 export default function MoviesPage() {
     const router = useRouter();
@@ -16,6 +18,28 @@ export default function MoviesPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const { isAdmin, canDeleteMovie } = useAuth();
+
+    // Modal states
+    const [modal, setModal] = useState<{
+        isOpen: boolean;
+        type: 'info' | 'warning' | 'error' | 'success' | 'confirm';
+        title: string;
+        message: string;
+        onConfirm?: () => void;
+    }>({
+        isOpen: false,
+        type: 'info',
+        title: '',
+        message: ''
+    });
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(6);
+    const totalPages = Math.ceil(movies.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentMovies = movies.slice(indexOfFirstItem, indexOfLastItem);
 
     useEffect(() => {
         const fetchMovies = async () => {
@@ -37,21 +61,41 @@ export default function MoviesPage() {
     const handleDelete = async (id: string) => {
         // Verificar permisos
         if (!canDeleteMovie()) {
-            alert("No tienes permisos para eliminar películas");
+            setModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Permiso Denegado',
+                message: 'No tienes permisos para eliminar películas'
+            });
             return;
         }
 
-        if (!confirm("¿Estás seguro de que deseas eliminar esta película?")) {
-            return;
-        }
-
-        try {
-            await movieService.delete(id);
-            setMovies(movies.filter(movie => movie.id !== id));
-        } catch (error: any) {
-            console.error("Error al eliminar película:", error);
-            alert("Error al eliminar la película. " + (error.response?.data?.message || ""));
-        }
+        setModal({
+            isOpen: true,
+            type: 'confirm',
+            title: 'Confirmar Eliminación',
+            message: '¿Estás seguro de que deseas eliminar esta película? Esta acción no se puede deshacer.',
+            onConfirm: async () => {
+                try {
+                    await movieService.delete(id);
+                    setMovies(movies.filter(movie => movie.id !== id));
+                    setModal({
+                        isOpen: true,
+                        type: 'success',
+                        title: '¡Éxito!',
+                        message: 'La película ha sido eliminada correctamente'
+                    });
+                } catch (error: any) {
+                    console.error("Error al eliminar película:", error);
+                    setModal({
+                        isOpen: true,
+                        type: 'error',
+                        title: 'Error',
+                        message: 'Error al eliminar la película. ' + (error.response?.data?.message || 'Intenta nuevamente')
+                    });
+                }
+            }
+        });
     };
 
     if (loading) {
@@ -98,16 +142,30 @@ export default function MoviesPage() {
 
                 {/* Grid de películas */}
                 {movies.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {movies.map(movie => (
-                            <MovieCard
-                                key={movie.id}
-                                movie={movie}
-                                showActions={isAdmin()}
-                                onDelete={handleDelete}
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {currentMovies.map(movie => (
+                                <MovieCard
+                                    key={movie.id}
+                                    movie={movie}
+                                    showActions={isAdmin()}
+                                    onDelete={handleDelete}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Paginación */}
+                        {totalPages > 1 && (
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={(page) => {
+                                    setCurrentPage(page);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
                             />
-                        ))}
-                    </div>
+                        )}
+                    </>
                 ) : (
                     <div className="text-center py-12">
                         <div className="text-6xl mb-4">🎬</div>
@@ -123,6 +181,18 @@ export default function MoviesPage() {
                     </div>
                 )}
             </div>
+
+            {/* Modal */}
+            <Modal
+                isOpen={modal.isOpen}
+                onClose={() => setModal({ ...modal, isOpen: false })}
+                onConfirm={modal.onConfirm}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+                confirmText={modal.type === 'confirm' ? 'Sí, eliminar' : 'Aceptar'}
+                cancelText="Cancelar"
+            />
         </div>
     );
 }

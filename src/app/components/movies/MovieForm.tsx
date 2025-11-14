@@ -104,20 +104,13 @@ export default function MovieForm({ movie, onSubmit, onCancel, isEditing = false
     };
 
     const genres = [
-        "Acción",
-        "Aventura",
-        "Comedia",
-        "Drama",
-        "Terror",
-        "Ciencia Ficción",
-        "Romance",
-        "Thriller",
-        "Animación",
-        "Documental",
-        "Fantasía",
-        "Musical",
-        "Suspenso",
-        "Western"
+        { value: "action", label: "Acción" },
+        { value: "comedy", label: "Comedia" },
+        { value: "drama", label: "Drama" },
+        { value: "horror", label: "Terror" },
+        { value: "romance", label: "Romance" },
+        { value: "sci-fi", label: "Ciencia Ficción" },
+        { value: "thriller", label: "Thriller" }
     ];
 
     return (
@@ -195,7 +188,7 @@ export default function MovieForm({ movie, onSubmit, onCancel, isEditing = false
                 >
                     <option value="">Selecciona un género</option>
                     {genres.map(genre => (
-                        <option key={genre} value={genre}>{genre}</option>
+                        <option key={genre.value} value={genre.value}>{genre.label}</option>
                     ))}
                 </select>
                 {errors.genre && (
