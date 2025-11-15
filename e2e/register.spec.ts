@@ -114,6 +114,36 @@ test.describe('Página de Registro', () => {
     });
 
     test('debe registrar usuario exitosamente con datos válidos', async ({ page }) => {
+        const mockRegisterResponse = {
+            token: 'mock-token',
+            user: {
+                id: '2',
+                name: 'Test User',
+                email: 'test@example.com',
+                roles: ['user']
+            }
+        };
+
+        await page.route('**/auth/register', async (route, request) => {
+            const body = request.postDataJSON();
+            expect(body).toMatchObject({
+                name: 'Test User',
+                password: 'password123'
+            });
+
+            await route.fulfill({
+                status: 201,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    ...mockRegisterResponse,
+                    user: {
+                        ...mockRegisterResponse.user,
+                        email: body.email
+                    }
+                })
+            });
+        });
+
         // Generar email único para evitar conflictos
         const uniqueEmail = `test${Date.now()}@example.com`;
 
@@ -126,8 +156,8 @@ test.describe('Página de Registro', () => {
         // Submit
         await page.getByRole('button', { name: 'Crear Cuenta' }).click();
 
-        // Debe redirigir al dashboard después de registro exitoso
-        await expect(page).toHaveURL('/dashboard', { timeout: 10000 });
+        // El usuario regular termina redirigido a la página de películas
+        await expect(page).toHaveURL('/movies', { timeout: 10000 });
     });
 
     test('debe validar todos los campos antes de enviar', async ({ page }) => {

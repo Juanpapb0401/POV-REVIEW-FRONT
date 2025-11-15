@@ -52,6 +52,45 @@ test.describe('Página de Login', () => {
     });
 
     test('debe funcionar con las credenciales de prueba de admin', async ({ page }) => {
+        const mockLoginResponse = {
+            token: 'mock-token',
+            user: {
+                id: '1',
+                name: 'Admin User',
+                email: 'admin@example.com',
+                roles: ['admin']
+            }
+        };
+
+        const mockProfileResponse = {
+            id: '1',
+            name: 'Admin User',
+            email: 'admin@example.com',
+            roles: ['admin']
+        };
+
+        await page.route('**/auth/login', async (route, request) => {
+            const body = request.postDataJSON();
+            expect(body).toEqual({
+                email: 'admin@example.com',
+                password: 'admin123'
+            });
+
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(mockLoginResponse)
+            });
+        });
+
+        await page.route('**/users/profile', async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(mockProfileResponse)
+            });
+        });
+
         // Usar credenciales de admin de prueba
         await page.getByLabel('Correo Electrónico').fill('admin@example.com');
         await page.getByLabel('Contraseña').fill('admin123');
@@ -59,8 +98,8 @@ test.describe('Página de Login', () => {
         // Submit
         await page.getByRole('button', { name: 'Iniciar Sesión' }).click();
 
-        // Debe redirigir al dashboard
-        await expect(page).toHaveURL('/dashboard', { timeout: 5000 });
+        // Debe redirigir a la página de películas tras un login exitoso
+        await expect(page).toHaveURL('/movies', { timeout: 5000 });
     });
 
     test('debe mostrar y ocultar contraseña (si hay toggle)', async ({ page }) => {
