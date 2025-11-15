@@ -1,0 +1,23 @@
+# Exclude build artifacts and generated files from language statistics
+.next/** linguist-generated=true
+out/** linguist-generated=true
+dist/** linguist-generated=true
+build/** linguist-generated=true
+
+# Exclude test coverage reports and test results
+coverage/** linguist-generated=true
+playwright-report/** linguist-generated=true
+test-results/** linguist-generated=true
+
+# Mark HTML files as documentation (not code)
+*.html linguist-documentation=true
+
+# Ensure TypeScript/TSX is properly detected
+*.ts linguist-detectable=true
+*.tsx linguist-detectable=true
+
+# Exclude backend folder (NestJS project inside frontend repo)
+pov-review/** linguist-vendored=true
+
+# Exclude PostgreSQL data
+pov-review/postgres/** linguist-vendored=true
