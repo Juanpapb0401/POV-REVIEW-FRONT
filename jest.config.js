@@ -29,6 +29,8 @@ const config = {
         '!src/**/*.d.ts',
         '!src/**/*.stories.{js,jsx,ts,tsx}',
         '!src/**/__tests__/**',
+        '!src/app/**/page.tsx',
+        '!src/app/**/layout.tsx',
     ],
 }
 
