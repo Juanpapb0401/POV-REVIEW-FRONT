@@ -101,7 +101,7 @@ export default function Home() {
                     href="/register"
                     className="bg-pov-gold hover:bg-pov-gold-dark text-pov-dark font-bold py-4 px-8 rounded-lg transition duration-200 shadow-xl text-lg w-full sm:w-auto"
                   >
-                    🎬 Comenzar Ahora
+                    Comenzar Ahora
                   </Link>
                   <Link
                     href="/login"
