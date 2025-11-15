@@ -1,12 +1,12 @@
 # Sistema de Autorización Basado en Roles - POV Review
 
-## 📋 Resumen de Implementación
+##  Resumen de Implementación
 
 Se ha implementado un sistema completo de autorización basado en roles para la aplicación POV Review, cumpliendo con los requisitos del taller.
 
 ---
 
-## 🎯 Características Implementadas
+##  Características Implementadas
 
 ### 1. **Sistema de Roles**
 - **ADMIN**: Puede gestionar películas (crear, editar, eliminar) y ver usuarios
@@ -105,7 +105,7 @@ Formulario para crear/editar reseñas con:
 
 ---
 
-## 🔐 Flujo de Autenticación y Autorización
+##  Flujo de Autenticación y Autorización
 
 ### 1. **Login**
 ```
@@ -136,7 +136,7 @@ Usuario intenta acción (ej: eliminar película)
 
 ---
 
-## 🎨 Elementos de UI según Rol
+##  Elementos de UI según Rol
 
 ### **Usuario NO autenticado**
 - ✅ Ver películas (listado y detalle)
@@ -165,76 +165,6 @@ Usuario intenta acción (ej: eliminar película)
 
 ---
 
-## 📁 Estructura de Archivos Creados/Modificados
-
-```
-src/app/
-├── hooks/
-│   └── useAuth.ts                    [NUEVO] Hook de autorización
-├── components/
-│   ├── auth/
-│   │   ├── RoleGuard.tsx            [NUEVO] Componente para roles
-│   │   └── ProtectedRoute.tsx       [NUEVO] Protección de rutas
-│   ├── layout/
-│   │   └── Navbar.tsx               [NUEVO] Barra de navegación
-│   └── reviews/
-│       ├── ReviewCard.tsx           [NUEVO] Tarjeta de reseña
-│       └── ReviewForm.tsx           [NUEVO] Formulario de reseña
-├── services/
-│   └── review/
-│       └── review.service.ts        [NUEVO] Servicio de reseñas
-├── login/
-│   └── page.tsx                     [MODIFICADO] Redirige a /movies
-├── movies/
-│   ├── page.tsx                     [MODIFICADO] Con autorización
-│   └── [id]/
-│       └── page.tsx                 [MODIFICADO] Con reseñas
-└── dashboard/
-    └── (main)/
-        └── page.tsx                 [MODIFICADO] Solo admin
-```
-
----
-
-## 🧪 Casos de Prueba
-
-### Como Usuario Regular:
-1. ✅ Iniciar sesión → Ver pantalla de películas
-2. ✅ Ver películas → NO ver botones de admin
-3. ✅ Entrar a detalle de película → Ver reseñas
-4. ✅ Escribir una reseña → Aparece en la lista
-5. ✅ Intentar escribir otra reseña → No permitido
-6. ✅ Editar mi reseña → Funciona
-7. ✅ Eliminar mi reseña → Funciona
-8. ❌ Intentar acceder a /dashboard → Redirige a /movies
-9. ❌ Ver botones de eliminar/editar películas → No visibles
-
-### Como Administrador:
-1. ✅ Iniciar sesión → Ver pantalla de películas
-2. ✅ Ver botón "Agregar Película" → Visible
-3. ✅ Ver botones de editar/eliminar en películas → Visibles
-4. ✅ Acceder a /dashboard → Ver lista de usuarios
-5. ✅ Escribir reseñas → Funciona igual que usuario
-6. ✅ Eliminar reseña de otro usuario → Permitido
-7. ✅ Crear nueva película → Funciona
-8. ✅ Editar película → Funciona
-9. ✅ Eliminar película → Funciona
-
----
-
-## 🚀 Próximos Pasos Sugeridos
-
-1. **Notificaciones**: Implementar sistema de toasts (react-toastify o sonner)
-2. **Validación de formularios**: Usar react-hook-form + zod
-3. **Paginación**: Implementar en lista de películas y reseñas
-4. **Búsqueda**: Agregar filtros por género, director, etc.
-5. **Perfil de usuario**: Página para ver/editar perfil
-6. **Estadísticas**: Dashboard con métricas para admin
-7. **Calificación promedio**: Mostrar rating promedio en películas
-8. **Testing**: Agregar pruebas E2E para flujos de autorización
-
----
-
 ## 🔑 Credenciales de Prueba
 
 **Admin:**
@@ -246,31 +176,3 @@ src/app/
 - Password: `alice123`
 
 ---
-
-## ✅ Requisitos del Taller Cumplidos
-
-- ✅ **Autenticación (10%)**: Sistema JWT implementado con login/logout
-- ✅ **Autorización (10%)**: 2 roles (admin/user) con permisos diferenciados
-- ✅ **Interfaz de usuario (15%)**: UI atractiva con componentes React
-- ✅ **Gestión del estado (10%)**: Zustand para auth, hooks personalizados
-- ✅ **Funcionalidades (20%)**: CRUD de películas y reseñas
-- ⏳ **Informe (10%)**: Este documento + adicional detallado
-- ⏳ **Despliegue (10%)**: Backend en Render, frontend pendiente
-- ⏳ **Pruebas (15%)**: E2E de login/register, faltan más pruebas
-
----
-
-## 📝 Notas Técnicas
-
-- **Estado Global**: Zustand con persistencia en localStorage
-- **Validación**: Backend valida todos los permisos
-- **Seguridad**: Token JWT en header Authorization
-- **UX**: Mensajes claros cuando no hay permisos
-- **Responsive**: Diseño adaptable a móviles
-- **Accesibilidad**: Uso de colores contrastantes y labels
-
----
-
-**Desarrollado por:** Juan Pablo Parra
-**Fecha:** Noviembre 2025
-**Curso:** Computación en Internet III
