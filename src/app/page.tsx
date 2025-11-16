@@ -133,7 +133,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Feature 1 */}
             <div className="bg-pov-secondary rounded-lg p-8 border border-pov-gold/10 hover:border-pov-gold/30 transition">
-              <div className="text-5xl mb-4">🔍</div>
+              <div className="text-5xl mb-4"></div>
               <h3 className="text-2xl font-bold text-pov-cream mb-3">Descubre Películas</h3>
               <p className="text-pov-gray">
                 Explora nuestra extensa colección de películas de todos los géneros y épocas.

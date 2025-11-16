@@ -1,0 +1,29 @@
+{
+  "services": [
+    {
+      "type": "web",
+      "name": "pov-review-front",
+      "runtime": "node",
+      "plan": "free",
+      "region": "oregon",
+      "buildCommand": "curl -fsSL https://bun.sh/install | bash && export BUN_INSTALL=\"$HOME/.bun\" && export PATH=\"$BUN_INSTALL/bin:$PATH\" && bun install && bun run build",
+      "startCommand": "export BUN_INSTALL=\"$HOME/.bun\" && export PATH=\"$BUN_INSTALL/bin:$PATH\" && bun start",
+      "envVars": [
+        {
+          "key": "NODE_VERSION",
+          "value": "20.11.0"
+        },
+        {
+          "key": "BUN_VERSION",
+          "value": "latest"
+        },
+        {
+          "key": "NEXT_PUBLIC_API_URL",
+          "value": "https://pov-review.onrender.com/api"
+        }
+      ],
+      "healthCheckPath": "/",
+      "autoDeploy": true
+    }
+  ]
+}

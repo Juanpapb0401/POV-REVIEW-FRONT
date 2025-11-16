@@ -23,7 +23,7 @@ export default function AuthDebug() {
 
     return (
         <div className="fixed bottom-4 right-4 bg-black/90 text-white p-4 rounded-lg text-xs max-w-md z-50">
-            <h3 className="font-bold mb-2">🔍 Auth Debug</h3>
+            <h3 className="font-bold mb-2"> Auth Debug</h3>
             <div className="space-y-1">
                 <p><strong>isAuthenticated:</strong> {isAuthenticated ? '✅ true' : '❌ false'}</p>
                 <p><strong>user:</strong> {user ? JSON.stringify(user) : '❌ null'}</p>
