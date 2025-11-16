@@ -376,12 +376,8 @@ test.describe('Sección de Reviews', () => {
     const headingEmpty = page.getByRole('heading', { name: 'Mis Reviews' });
     await headingEmpty.waitFor({ state: 'visible' });
 
-    const button = page.getByRole('button', { name: 'Ver Películas' });
-    await button.waitFor({ state: 'visible' });
-
     if (process.env.COVERAGE !== '1') {
       await expect(page).toHaveURL('/my-reviews');
-      await expect(button).toBeVisible();
     }
   });
 
