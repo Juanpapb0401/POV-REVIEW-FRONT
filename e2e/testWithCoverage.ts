@@ -16,55 +16,55 @@ let exitHookRegistered = false;
 
 const test = coverageEnabled
   ? base.extend({
-      page: async ({ page }, use) => {
-        await page.coverage.startJSCoverage({
-          resetOnNavigation: false,
-          reportAnonymousScripts: false,
-        });
+    page: async ({ page }, use) => {
+      await page.coverage.startJSCoverage({
+        resetOnNavigation: false,
+        reportAnonymousScripts: false,
+      });
 
-        await use(page);
+      await use(page);
 
-        let entries: Awaited<ReturnType<typeof page.coverage.stopJSCoverage>>;
-        try {
-          entries = await page.coverage.stopJSCoverage();
-        } catch (error) {
-          console.warn('No se pudo detener la cobertura de JS:', (error as Error).message);
-          return;
+      let entries: Awaited<ReturnType<typeof page.coverage.stopJSCoverage>>;
+      try {
+        entries = await page.coverage.stopJSCoverage();
+      } catch (error) {
+        console.warn('No se pudo detener la cobertura de JS:', (error as Error).message);
+        return;
+      }
+
+      for (const entry of entries) {
+        if (!entry.url.startsWith('http://localhost:3000/_next')) {
+          continue;
         }
 
-        for (const entry of entries) {
-          if (!entry.url.startsWith('http://localhost:3000/_next')) {
-            continue;
-          }
+        let source = entry.source;
 
-          let source = entry.source;
-
-          if (!source) {
-            try {
-              const response = await fetch(entry.url);
-              if (!response.ok) {
-                continue;
-              }
-              source = await response.text();
-            } catch (error) {
-              console.warn(`No se pudo obtener el código fuente de ${entry.url}: ${(error as Error).message}`);
+        if (!source) {
+          try {
+            const response = await fetch(entry.url);
+            if (!response.ok) {
               continue;
             }
-          }
-
-          try {
-            const filePath = entry.url.replace('http://localhost:3000', '');
-            const sanitizedSource = source.replace(/\/\/# sourceMappingURL=.*$/gm, '');
-            const converter = v8ToIstanbul(filePath, 0, { source: sanitizedSource });
-            await converter.load();
-            converter.applyCoverage(entry.functions);
-            aggregatedCoverage.merge(converter.toIstanbul());
+            source = await response.text();
           } catch (error) {
-            console.warn(`No se pudo procesar la cobertura de ${entry.url}: ${(error as Error).message}`);
+            console.warn(`No se pudo obtener el código fuente de ${entry.url}: ${(error as Error).message}`);
+            continue;
           }
         }
-      },
-    })
+
+        try {
+          const filePath = entry.url.replace('http://localhost:3000', '');
+          const sanitizedSource = source.replace(/\/\/# sourceMappingURL=.*$/gm, '');
+          const converter = v8ToIstanbul(filePath, 0, { source: sanitizedSource });
+          await converter.load();
+          converter.applyCoverage(entry.functions);
+          aggregatedCoverage.merge(converter.toIstanbul());
+        } catch (error) {
+          console.warn(`No se pudo procesar la cobertura de ${entry.url}: ${(error as Error).message}`);
+        }
+      }
+    },
+  })
   : base;
 
 if (coverageEnabled && !exitHookRegistered) {
@@ -85,7 +85,8 @@ if (coverageEnabled && !exitHookRegistered) {
         file.startsWith('/_next/static/chunks/app/') ||
         file.startsWith('/_next/static/chunks/(app-pages-browser)/src')
       ) {
-        filteredCoverage.merge(aggregatedCoverage.fileCoverageFor(file));
+        const fileCoverage = aggregatedCoverage.fileCoverageFor(file);
+        filteredCoverage.addFileCoverage(fileCoverage);
       }
     }
 
