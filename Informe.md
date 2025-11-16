@@ -1472,11 +1472,17 @@ interface ProtectedRouteProps {
 ### 8.2 Testing end-to-end (Playwright)
 
 - **Comando principal:** `bun run test:e2e`.  
-- **Suites / pruebas:** 5 suites · 22 pruebas totales ejecutadas en Chromium.  
-- **Flujos validados:** login (render, validaciones, navegación, login exitoso), registro (validaciones, creación con mock), dashboard admin (listado, cambio de rol, eliminación), catálogo de películas (vista pública y creación administrada) y detalle de reseñas (creación desde película).  
-- **Reportes:** HTML disponible en `playwright-report/index.html` después de cada corrida.
+- **Suites / pruebas:** 7 suites · 31 pruebas totales ejecutadas en Chromium (con mocks de API).  
+- **Flujos validados:**  
+  - **Login/Registro:** render, validaciones, navegación, login/admin happy path.  
+  - **Dashboard:** listado, cambio de rol, eliminación de usuario y modal de confirmación.  
+  - **Películas:** vista pública, estado vacío para admins, creación, navegación al detalle, paginación, edición y eliminación desde el listado.  
+  - **Reviews:** creación desde película, edición, estado vacío con CTA.  
+- **Reportes:** HTML disponible en `playwright-report/index.html` y cobertura textual en `.playwright-coverage/report.txt`.
 
-### 8.3 Resumen de cobertura (Jest)
+### 8.3 Resumen de cobertura
+
+#### Unit Tests (Jest)
 
 | Métrica | Valor |
 |---------|-------|
@@ -1485,7 +1491,16 @@ interface ProtectedRouteProps {
 | Functions | **84.21 %** |
 | Lines | **96.24 %** |
 
-> La cobertura corresponde al reporte generado por Jest (`bun run test -- --coverage`). Se cubren todos los módulos críticos (servicios, stores, componentes y hooks) con porcentajes superiores al 80 %. Actualmente no se instrumenta cobertura para las pruebas E2E; el enfoque de Playwright es de verificación funcional.
+#### E2E (Playwright + instrumentación frontend)
+
+| Métrica | Valor |
+|---------|-------|
+| Statements | **80.27 %** |
+| Branches | **81.04 %** |
+| Functions | **80.05 %** |
+| Lines | **80.27 %** |
+
+> La cobertura E2E se genera con `npm run test:e2e:coverage` (`--workers=1`) y se concentra en los módulos de `src/` y App Router. El HTML del run está en `playwright-report/`.
 
 ---
 
