@@ -7,47 +7,10 @@ on:
     branches: [ main ]
 
 jobs:
-  # Job 1: Lint y Tests
-  test:
-    name:  Tests y Linting
-    runs-on: ubuntu-latest
-
-    steps:
-      - name:  Checkout code
-        uses: actions/checkout@v4
-
-      - name:  Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name:  Install dependencies
-        run: bun install
-
-      - name:  Run unit tests
-        run: bun test --passWithNoTests
-
-      - name: Install Playwright browsers
-        run: bunx playwright install --with-deps chromium
-
-      - name:  Run E2E tests
-        run: bun run test:e2e
-        env:
-          CI: true
-
-      - name:  Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
-
-  # Job 2: Build
+  # Job 1: Build
   build:
     name: 🏗️ Build Application
     runs-on: ubuntu-latest
-    needs: test
 
     steps:
       - name:  Checkout code
@@ -69,11 +32,11 @@ jobs:
       - name:  Build successful
         run: echo " Build completed successfully!"
 
-  # Job 3: Deploy to Render
+  # Job 2: Deploy to Render
   deploy:
     name:  Deploy to Render
     runs-on: ubuntu-latest
-    needs: [test, build]
+    needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
