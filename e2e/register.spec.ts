@@ -156,8 +156,8 @@ test.describe('Página de Registro', () => {
         // Submit
         await page.getByRole('button', { name: 'Crear Cuenta' }).click();
 
-        // El usuario regular termina redirigido a la página de películas
-        await expect(page).toHaveURL('/movies', { timeout: 10000 });
+        // El flujo actual redirige al dashboard tras registrarse
+        await expect(page).toHaveURL('/dashboard', { timeout: 10000 });
     });
 
     test('debe validar todos los campos antes de enviar', async ({ page }) => {

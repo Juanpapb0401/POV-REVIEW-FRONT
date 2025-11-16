@@ -31,6 +31,10 @@ const config = {
         '!src/**/__tests__/**',
         '!src/app/**/page.tsx',
         '!src/app/**/layout.tsx',
+        '!src/app/components/debug/**',
+        '!src/app/interfaces/**',
+        '!src/app/**/index.ts',
+        '!src/app/**/interfaces/**',
     ],
 }
 

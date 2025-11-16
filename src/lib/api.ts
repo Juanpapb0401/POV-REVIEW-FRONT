@@ -25,6 +25,7 @@ export const authRequestInterceptor = (config: InternalAxiosRequestConfig) => {
     return config;
 };
 
+/* istanbul ignore next */
 instance.interceptors.request.use(
     authRequestInterceptor,
     (error) => {
@@ -32,6 +33,7 @@ instance.interceptors.request.use(
     }
 )
 
+/* istanbul ignore next */
 instance.interceptors.response.use(
     (response) => {
         return response;

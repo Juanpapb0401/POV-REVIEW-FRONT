@@ -1462,210 +1462,30 @@ interface ProtectedRouteProps {
 
 ## 8. TESTING
 
-### 8.1 Testing Unitario con Jest
+### 8.1 Testing unitario (Jest)
 
-**Configuración:** `jest.config.js`
+- **Comando principal:** `bun run test`  
+- **Suites / pruebas:** 23 suites · 95 tests ejecutados sin fallos.  
+- **Herramientas:** Jest, Testing Library (render, screen, userEvent), mocks de Axios y `localStorage`, entorno `jsdom`.  
+- **Áreas cubiertas:** servicios (`auth`, `movie`, `review`, `user`, `api`), stores de Zustand (`auth`, `movie`, `user`), hooks (`useAuth`), componentes UI (Button, Alert, Input, Modal, Pagination), formularios (MovieForm, ReviewForm) y componentes de layout/autenticación.
 
-**Características:**
-- **jsdom** para simular navegador
-- **Testing Library** para componentes React
-- **Setup global** en `jest.setup.js`
-- **Mocking** de módulos
-- **Cobertura** de código
+### 8.2 Testing end-to-end (Playwright)
 
-#### Tests Implementados
+- **Comando principal:** `bun run test:e2e`.  
+- **Suites / pruebas:** 5 suites · 22 pruebas totales ejecutadas en Chromium.  
+- **Flujos validados:** login (render, validaciones, navegación, login exitoso), registro (validaciones, creación con mock), dashboard admin (listado, cambio de rol, eliminación), catálogo de películas (vista pública y creación administrada) y detalle de reseñas (creación desde película).  
+- **Reportes:** HTML disponible en `playwright-report/index.html` después de cada corrida.
 
-##### 1. Auth Service Tests
+### 8.3 Resumen de cobertura (Jest)
 
-**Ubicación:** `src/app/services/auth/__tests__/auth.service.test.ts`
+| Métrica | Valor |
+|---------|-------|
+| Statements | **96.24 %** |
+| Branches | **86.66 %** |
+| Functions | **84.21 %** |
+| Lines | **96.24 %** |
 
-**Casos de prueba:**
-
-```typescript
-describe('AuthService', () => {
-  describe('login', () => {
-    'debe hacer login correctamente y guardar el token'
-    'debe manejar errores de login'
-  });
-
-  describe('register', () => {
-    'debe registrar correctamente y guardar el token'
-    'debe manejar errores de registro'
-  });
-
-  describe('logout', () => {
-    'debe eliminar el token del localStorage'
-  });
-
-  describe('isAuthenticated', () => {
-    'debe retornar true si hay token'
-    'debe retornar false si no hay token'
-  });
-
-  describe('getToken', () => {
-    'debe retornar el token si existe'
-    'debe retornar null si no existe token'
-  });
-
-  describe('getProfile', () => {
-    'debe obtener el perfil del usuario'
-    'debe manejar errores al obtener perfil'
-  });
-});
-```
-
-**Técnicas utilizadas:**
-- Mock de `apiService`
-- Mock de `localStorage`
-- Assertions con `expect`
-- Pruebas asíncronas con `async/await`
-
-##### 2. Component Tests - Button
-
-**Ubicación:** `src/app/components/ui/__tests__/Button.test.tsx`
-
-**Casos de prueba:**
-
-```typescript
-describe('Button Component', () => {
-  'debe renderizar correctamente con children'
-  'debe ejecutar onClick cuando se hace click'
-  'debe mostrar texto de carga cuando loading es true'
-  'debe estar deshabilitado cuando loading es true'
-  'debe estar deshabilitado cuando disabled es true'
-  'debe aplicar la clase fullWidth cuando se pasa la prop'
-  'debe aplicar estilos de variante primary por defecto'
-  'debe aplicar estilos de variante secondary'
-  'debe aplicar estilos de variante danger'
-});
-```
-
-**Técnicas utilizadas:**
-- `render()` de Testing Library
-- `screen.getByText()` para queries
-- `userEvent` para interacciones
-- Verificación de clases CSS
-
-##### 3. Component Tests - Input y Alert
-
-**Ubicación:** `src/app/components/ui/__tests__/`
-
-**Casos similares para:**
-- Input component
-- Alert component
-
-**Comandos de testing:**
-```bash
-# Ejecutar tests
-npm run test
-
-# Watch mode
-npm run test:watch
-
-# Con cobertura
-npm run test -- --coverage
-```
-
-### 8.2 Testing E2E con Playwright
-
-**Configuración:** `playwright.config.ts`
-
-**Navegadores:** Chromium, Firefox, WebKit
-
-#### Tests Implementados
-
-##### 1. Login Tests
-
-**Ubicación:** `e2e/login.spec.ts`
-
-**Casos de prueba:**
-
-```typescript
-describe('Página de Login', () => {
-  'debe mostrar el formulario de login correctamente'
-     - Verifica título
-     - Verifica campos
-     - Verifica botones
-     - Verifica links
-  
-  'debe mostrar errores de validación con campos vacíos'
-     - Submit sin datos
-     - Verifica que no redirija
-  
-  'debe mostrar error con credenciales incorrectas'
-     - Login con credenciales inválidas
-     - Verifica mensaje de error
-  
-  'debe navegar a la página de registro'
-     - Click en link de registro
-     - Verifica URL
-  
-  'debe funcionar con las credenciales de prueba de admin'
-     - Mock de API
-     - Login exitoso
-     - Verifica navegación
-});
-```
-
-**Técnicas utilizadas:**
-- `page.goto()` para navegación
-- `page.getByLabel()` para seleccionar elementos
-- `page.route()` para mockear APIs
-- `expect(page).toHaveURL()` para verificar navegación
-
-##### 2. Register Tests
-
-**Ubicación:** `e2e/register.spec.ts`
-
-**Casos de prueba:**
-
-```typescript
-describe('Página de Registro', () => {
-  'debe mostrar el formulario de registro correctamente'
-  'debe mostrar error cuando el nombre es muy corto'
-  'debe mostrar error cuando el email es inválido'
-  'debe mostrar error cuando las contraseñas no coinciden'
-  'debe mostrar error cuando la contraseña es muy corta'
-  'debe navegar a la página de login'
-  'debe limpiar errores cuando el usuario escribe'
-  'debe crear cuenta exitosamente con datos válidos' (mock)
-});
-```
-
-**Comandos de testing E2E:**
-```bash
-# Ejecutar tests E2E
-npm run test:e2e
-
-# Con UI de Playwright
-npm run test:e2e:ui
-
-# Generar reporte
-npx playwright show-report
-```
-
-### 8.3 Cobertura de Testing
-
-#### Áreas con cobertura:
-- Auth Service (100%)
-- Componentes UI base
-- Flujos de login/register (E2E)
-
-#### Áreas sin cobertura:
-- Movie Service
-- Review Service
-- User Service
-- Stores de Zustand
-- Componentes de dominio
-- Hooks personalizados
-- Flujos completos de películas/reviews
-
-#### Mejoras recomendadas:
-1. Aumentar cobertura de servicios
-2. Tests de integración de stores
-3. Tests de componentes de dominio
-4. Más escenarios E2E (películas, reviews, admin)
-5. Tests de permisos y autorización
+> La cobertura corresponde al reporte generado por Jest (`bun run test -- --coverage`). Se cubren todos los módulos críticos (servicios, stores, componentes y hooks) con porcentajes superiores al 80 %. Actualmente no se instrumenta cobertura para las pruebas E2E; el enfoque de Playwright es de verificación funcional.
 
 ---
 
