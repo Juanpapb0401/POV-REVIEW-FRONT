@@ -15,14 +15,15 @@ const config = {
         '^@/(.*)$': '<rootDir>/src/$1',
     },
     testMatch: [
-        '**/__tests__/**/*.test.[jt]s?(x)',
-        '**/?(*.)+(spec|test).[jt]s?(x)'
+        '<rootDir>/src/**/__tests__/**/*.test.[jt]s?(x)',
     ],
     testPathIgnorePatterns: [
         '/node_modules/',
         '/.next/',
-        '/e2e/', // Excluir tests de Playwright
-        '/POV-REVIEW/' // Excluir tests del backend NestJS
+        '/e2e/',
+        '/pov-review/',
+        '/playwright-report/',
+        '/test-results/',
     ],
     collectCoverageFrom: [
         'src/**/*.{js,jsx,ts,tsx}',

@@ -25,7 +25,7 @@ jobs:
         run: bun install
 
       - name: Run unit tests
-        run: bun test
+        run: bun run test
         continue-on-error: false
 
   # Job 2: Tests E2E
