@@ -1,4 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from './testWithCoverage';
+import type { Page } from '@playwright/test';
 
 const adminPersistedState = JSON.stringify({
   state: {

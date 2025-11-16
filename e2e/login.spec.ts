@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './testWithCoverage';
 
 test.describe('Página de Login', () => {
     test.beforeEach(async ({ page }) => {

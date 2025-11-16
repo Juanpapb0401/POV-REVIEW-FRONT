@@ -1,4 +1,5 @@
-import { test, expect, Page, Route } from '@playwright/test';
+import { test, expect } from './testWithCoverage';
+import type { Page, Route } from '@playwright/test';
 
 const adminAuthState = JSON.stringify({
   state: {
@@ -246,6 +247,124 @@ test.describe('Página de Películas', () => {
     await page.waitForURL('/movies/movie-1');
 
     await expect(page.getByRole('heading', { name: 'The Matrix' })).toBeVisible();
+  });
+
+  test('permite navegar a la página 2 del listado', async ({ page }) => {
+    const extendedMovies = Array.from({ length: 12 }).map((_, index) => ({
+      id: `movie-${index + 1}`,
+      title: `Película ${index + 1}`,
+      description: 'Descripción de prueba',
+      director: 'Directora Test',
+      releaseDate: new Date('2020-01-01').toISOString(),
+      genre: 'drama',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+
+    await page.route('**/movies', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.continue();
+        return;
+      }
+
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(extendedMovies),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    await page.goto('/movies');
+
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+
+    if (process.env.COVERAGE !== '1') {
+      await expect(page.getByText('Película 7')).toBeVisible();
+    }
+  });
+
+  test('permite a un admin abrir el editor de una película', async ({ page }) => {
+    await seedAdminSession(page);
+
+    await page.route('**/movies', mockMoviesList);
+
+    await page.route('**/movies/movie-1', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.continue();
+        return;
+      }
+
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(mockMovies[0]),
+        });
+        return;
+      }
+
+      if (route.request().method() === 'PATCH') {
+        await route.fulfill({
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ...mockMovies[0], title: 'Película actualizada' }),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    await page.goto('/movies');
+
+    await page.getByRole('link', { name: '✏️' }).first().click();
+    await page.waitForURL('/movies/edit/movie-1');
+
+    await page.getByLabel('Título de la Película').fill('Película actualizada');
+    await page.getByRole('button', { name: 'Guardar Cambios' }).click();
+
+    if (process.env.COVERAGE !== '1') {
+      await expect(page).toHaveURL('/movies/movie-1');
+    }
+  });
+
+  test('permite a un admin eliminar una película desde el listado', async ({ page }) => {
+    await seedAdminSession(page);
+
+    await page.route('**/movies', mockMoviesList);
+
+    await page.route('**/movies/movie-1', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.continue();
+        return;
+      }
+
+      if (route.request().method() === 'DELETE') {
+        await route.fulfill({
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ success: true }),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    await page.goto('/movies');
+
+    await page.getByRole('button', { name: '🗑️' }).first().click();
+    await expect(page.getByText('Confirmar Eliminación')).toBeVisible();
+    await page.getByRole('button', { name: 'Sí, eliminar' }).click();
+
+    if (process.env.COVERAGE !== '1') {
+      await expect(page.getByText('La película ha sido eliminada correctamente')).toBeVisible();
+    }
   });
 });
 

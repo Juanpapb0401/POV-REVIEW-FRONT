@@ -15,6 +15,7 @@ POV-REVIEW/
 
 # testing
 /coverage
+.playwright-coverage/
 
 # next.js
 /.next/
