@@ -80,6 +80,45 @@ test.describe('Página de Películas', () => {
     await expect(page.getByRole('link', { name: '➕ Agregar Película' })).toHaveCount(0);
   });
 
+  test('muestra mensaje vacío y CTA para admins cuando no hay películas', async ({ page }) => {
+    await seedAdminSession(page);
+
+    await page.route('**/movies', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.continue();
+        return;
+      }
+
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify([]),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    await page.goto('/movies');
+
+    await expect(page.getByText('No hay películas disponibles')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Agregar la primera película' })).toBeVisible();
+  });
+
+  test('muestra acciones administrativas en la tarjeta de película para un admin', async ({ page }) => {
+    await seedAdminSession(page);
+
+    await page.route('**/movies', mockMoviesList);
+
+    await page.goto('/movies');
+
+    await expect(page.getByRole('link', { name: '➕ Agregar Película' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '✏️' })).toHaveCount(mockMovies.length);
+    await expect(page.getByRole('button', { name: '🗑️' })).toHaveCount(mockMovies.length);
+  });
+
   test('permite crear una película desde el formulario administrado', async ({ page }) => {
     await seedAdminSession(page);
 
@@ -149,6 +188,64 @@ test.describe('Página de Películas', () => {
     await page.getByRole('button', { name: '➕ Crear Película' }).click();
 
     await expect(page).toHaveURL(/\/movies\/movie-99$/);
+  });
+
+  test('permite navegar al detalle de una película desde el listado', async ({ page }) => {
+    await page.route('**/movies', async (route) => {
+      if (route.request().url().includes('/movies/movie-1')) {
+        await route.continue();
+        return;
+      }
+
+      await mockMoviesList(route);
+    });
+
+    await page.route('**/movies/movie-1', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.continue();
+        return;
+      }
+
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            id: 'movie-1',
+            title: 'The Matrix',
+            description: 'Realidad virtual y acción',
+            director: 'Wachowski Sisters',
+            releaseDate: new Date('1999-03-31').toISOString(),
+            genre: 'sci-fi',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    await page.route('**/reviews/movie/movie-1', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify([]),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    await page.goto('/movies');
+
+    await page.getByRole('link', { name: 'Ver Detalles' }).first().click();
+    await page.waitForURL('/movies/movie-1');
+
+    await expect(page.getByRole('heading', { name: 'The Matrix' })).toBeVisible();
   });
 });
 
