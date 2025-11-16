@@ -68,12 +68,23 @@ async function loginAsUser(page: Page, movies: any[] = []) {
   await page.getByLabel('Contraseña').fill(credentials.password);
   await page.getByRole('button', { name: 'Iniciar Sesión' }).click();
   await page.waitForURL('/movies');
+
+  // Ensure localStorage is set for subsequent navigations
+  await page.evaluate(({ token, user }) => {
+    const authState = {
+      state: {
+        token,
+        user,
+        isAuthenticated: true,
+      },
+      version: 0,
+    };
+    localStorage.setItem('auth-storage', JSON.stringify(authState));
+  }, { token: authToken, user: baseUserProfile });
 }
 
 test.describe('Sección de Reviews', () => {
   test('muestra las reviews del usuario en su perfil', async ({ page }) => {
-    await loginAsUser(page);
-
     const userWithReviews = {
       ...baseUserProfile,
       reviews: [
@@ -96,6 +107,7 @@ test.describe('Sección de Reviews', () => {
       ],
     };
 
+    // Setup routes BEFORE login
     await page.route('**/users/user-1', async (route) => {
       if (route.request().resourceType() === 'document') {
         await route.continue();
@@ -114,8 +126,10 @@ test.describe('Sección de Reviews', () => {
       await route.continue();
     });
 
+    await loginAsUser(page);
+
     await page.goto('/my-reviews');
-    await page.waitForURL('/my-reviews');
+    await page.waitForURL('/my-reviews', { timeout: 10000 });
 
     const heading = page.getByRole('heading', { name: 'Mis Reviews' });
     await heading.waitFor({ state: 'visible' });
@@ -330,13 +344,12 @@ test.describe('Sección de Reviews', () => {
   });
 
   test('muestra estado vacío y CTA cuando el usuario no tiene reviews', async ({ page }) => {
-    await loginAsUser(page);
-
     const userWithoutReviews = {
       ...baseUserProfile,
       reviews: [],
     };
 
+    // Setup routes BEFORE login
     await page.route('**/users/user-1', async (route) => {
       if (route.request().resourceType() === 'document') {
         await route.continue();
@@ -355,8 +368,10 @@ test.describe('Sección de Reviews', () => {
       await route.continue();
     });
 
+    await loginAsUser(page);
+
     await page.goto('/my-reviews');
-    await page.waitForURL('/my-reviews');
+    await page.waitForURL('/my-reviews', { timeout: 10000 });
 
     const headingEmpty = page.getByRole('heading', { name: 'Mis Reviews' });
     await headingEmpty.waitFor({ state: 'visible' });

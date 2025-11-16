@@ -52,6 +52,7 @@ jobs:
         run: bun run test:e2e
         env:
           CI: true
+        timeout-minutes: 10
 
       - name: Upload test report
         if: always()
