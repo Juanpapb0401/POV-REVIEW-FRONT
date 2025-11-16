@@ -150,3 +150,7 @@ Usuario Normal:
 Email: user@test.com
 Password: User123
 ```
+## Hecho por:
+
+Juan Pablo Parra, Pablo Guzman, Thomas Brueck y Daniel Gonzalez
+
