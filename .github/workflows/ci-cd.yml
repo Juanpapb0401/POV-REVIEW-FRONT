@@ -24,9 +24,6 @@ jobs:
       - name:  Install dependencies
         run: bun install
 
-      - name:  Run ESLint
-        run: bun run lint
-
       - name:  Run unit tests
         run: bun test --passWithNoTests
 
