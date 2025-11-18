@@ -222,7 +222,7 @@ test.describe('Sección de Reviews', () => {
     await expect(page.getByRole('heading', { name: 'Reseñas (0)' })).toBeVisible();
 
     await page.getByRole('button', { name: '✍️ Escribir Reseña' }).click();
-    await page.getByRole('button', { name: '⭐' }).nth(4).click();
+    await page.getByRole('button', { name: '☆' }).nth(4).click();
     await page.getByLabel('Comentario').fill('Increíble película, visualmente impactante.');
 
     const createResponse = page.waitForResponse(

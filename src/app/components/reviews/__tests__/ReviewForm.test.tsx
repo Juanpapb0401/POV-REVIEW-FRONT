@@ -30,7 +30,7 @@ describe('ReviewForm', () => {
             <ReviewForm movieId="1" onSubmit={onSubmit} />
         );
 
-        const starButtons = getAllByRole('button', { name: '⭐' });
+        const starButtons = getAllByRole('button', { name: '☆' });
         fireEvent.click(starButtons[3]); // rating = 4
 
         fireEvent.change(getByLabelText('Comentario'), {
